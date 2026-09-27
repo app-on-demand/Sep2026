@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>우리의 한 시즌</title>
+<meta name="description" content="멘토링 팀의 한 시즌을 회고하고, 서로에게 감사 카드를 전하는 작은 페이지" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gaegu:wght@400;700&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet" crossorigin="anonymous" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💌</text></svg>" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
+<style>
+:root{
+  color-scheme:light only;
+  --paper:#f6efe2; --paper-2:#efe4d0; --ink:#3b3128; --ink-soft:#6e6055; --line:#d8c9b1;
+  --accent:#b5473a; --accent-soft:#e6c7bf; --card:#fbf6ea; --shadow:0 10px 30px rgba(80,60,30,.14);
+  --serif:'Gowun Batang','Nanum Myeongjo',serif; --hand:'Gaegu',cursive;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:var(--serif);color:var(--ink);background:var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 10%,rgba(255,255,255,.55),transparent 40%),
+    radial-gradient(circle at 80% 90%,rgba(181,71,58,.06),transparent 45%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2 0 0 0 0 .15 0 0 0 0 .1 0 0 0 .06 0'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
+  line-height:1.65;-webkit-font-smoothing:antialiased;
+}
+#app{max-width:520px;margin:0 auto;padding:20px 16px 60px;min-height:100vh}
+h1,h2,h3{font-family:var(--serif);font-weight:700;letter-spacing:-.01em;margin:0 0 8px}
+h1{font-size:30px;line-height:1.3}
+h2{font-size:22px}
+h3{font-size:16px;color:var(--ink-soft);font-weight:400}
+p{margin:0 0 12px}
+.muted{color:var(--ink-soft);font-size:14px}
+.eyebrow{font-size:12px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;margin-bottom:10px}
+.hand{font-family:var(--hand)}
+
+/* progress */
+.progress{display:flex;gap:6px;margin:6px 0 26px}
+.progress i{flex:1;height:3px;border-radius:2px;background:var(--line);transition:background .3s}
+.progress i.on{background:var(--accent)}
+
+/* layout bits */
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.section{margin:26px 0}
+.sec-title{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.sec-title b{font-size:17px}
+.sec-title span{font-size:13px;color:var(--ink-soft)}
+
+/* choice chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  border:1px solid var(--line);background:#fff8;border-radius:999px;padding:8px 14px;font-size:14.5px;
+  cursor:pointer;font-family:inherit;color:var(--ink);transition:all .15s;line-height:1.3
+}
+.chip:hover{border-color:var(--accent)}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip.big{padding:12px 16px;font-size:15px}
+
+/* person picker */
+.people{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.person{
+  border:1px solid var(--line);background:var(--card);border-radius:14px;padding:18px 14px;cursor:pointer;
+  text-align:center;font-family:inherit;transition:transform .15s,border-color .15s;position:relative
+}
+.person:hover{transform:translateY(-2px)}
+.person.on{border-color:var(--ink);box-shadow:var(--shadow)}
+.person .dot{width:44px;height:44px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-family:var(--hand);font-size:22px;color:#fff}
+.person b{display:block;font-size:17px}
+.person small{color:var(--ink-soft)}
+
+/* timeline */
+.tl{position:relative;padding-left:22px}
+.tl:before{content:"";position:absolute;left:6px;top:8px;bottom:8px;border-left:2px dashed var(--line)}
+.tl-item{position:relative;margin-bottom:18px}
+.tl-item:before{content:"";position:absolute;left:-20px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.tl-item .name{font-weight:700}
+.tl-item .lead{font-size:13px;color:var(--ink-soft);margin-left:6px}
+.moods{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.mood{border:1px solid var(--line);background:#fff8;border-radius:10px;padding:6px 10px;font-size:14px;cursor:pointer;font-family:inherit;color:var(--ink)}
+.mood.on{background:var(--accent-soft);border-color:var(--accent)}
+
+/* inputs */
+input[type=text],textarea{
+  width:100%;font-family:var(--hand);font-size:19px;color:var(--ink);background:transparent;border:none;
+  border-bottom:1.5px solid var(--line);padding:8px 2px;outline:none;resize:none;line-height:1.5
+}
+input[type=text]:focus,textarea:focus{border-bottom-color:var(--accent)}
+textarea{background:repeating-linear-gradient(transparent,transparent 31px,var(--line) 31px,var(--line) 32px);line-height:32px;padding:0 2px;border-bottom:none}
+label.q{display:block;font-size:15px;margin:16px 0 4px}
+.optional{font-size:12px;color:var(--ink-soft)}
+
+/* slider */
+.slider{margin:6px 0 4px}
+.slider input{width:100%;accent-color:var(--accent)}
+.slider .ends{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-soft)}
+
+/* nav */
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:34px;gap:10px}
+.btn{
+  font-family:var(--serif);font-size:15px;padding:12px 20px;border-radius:999px;border:1px solid var(--ink);
+  background:var(--ink);color:var(--paper);cursor:pointer;transition:all .15s
+}
+.btn:hover{opacity:.9}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.small{padding:8px 14px;font-size:13.5px}
+.btn.accent{background:var(--accent);border-color:var(--accent)}
+
+/* letter card */
+.letter{
+  position:relative;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:30px 26px 26px;
+  box-shadow:var(--shadow);overflow:hidden;
+  /* 종이 질감: SVG data URI는 PNG 저장 시 검게 나오므로 그라디언트로만 */
+  background-image:
+    radial-gradient(circle at 15% 20%,rgba(255,255,255,.5),transparent 45%),
+    radial-gradient(circle at 85% 80%,rgba(181,71,58,.05),transparent 50%),
+    repeating-linear-gradient(115deg,rgba(120,90,50,.025) 0 2px,transparent 2px 7px);
+}
+.letter:before{content:"";position:absolute;inset:8px;border:1px solid var(--line);border-radius:4px;pointer-events:none}
+.letter .to{font-size:14px;color:var(--ink-soft);letter-spacing:.1em}
+.letter .to b{font-size:22px;color:var(--ink);display:block;margin-top:2px;letter-spacing:0}
+.letter .season{font-size:12px;color:var(--ink-soft);margin-top:4px}
+.letter .body{margin:22px 0 16px;font-size:16.5px;line-height:1.9}
+.letter .body .hand{font-size:20px;display:block;margin-bottom:12px;white-space:pre-wrap}
+.letter .scene{padding-left:12px;border-left:3px solid var(--accent-soft);color:var(--ink);white-space:pre-wrap}
+.letter .from{text-align:right;margin-top:18px}
+.letter .from .sig{font-family:var(--hand);font-size:26px;display:block;mix-blend-mode:multiply;filter:saturate(1.4) brightness(.85)}
+.season-card .head .who{mix-blend-mode:multiply;filter:saturate(1.4) brightness(.85)}
+.letter .from small{color:var(--ink-soft);font-size:12px}
+.stamp{
+  position:absolute;right:22px;top:22px;width:88px;height:88px;border-radius:50%;
+  border:2.5px solid var(--accent);color:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transform:rotate(-12deg);font-size:12px;line-height:1.2;text-align:center;opacity:.85;
+  box-shadow:inset 0 0 0 3px var(--card),inset 0 0 0 4px var(--accent);padding:8px;
+  mix-blend-mode:multiply
+}
+.stamp b{font-size:16px;display:block;margin-top:2px}
+.stamp .ico{font-size:20px}
+.titles-line{margin:14px 0 4px;display:flex;flex-wrap:wrap;gap:6px}
+.title-tag{font-size:13px;border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:3px 10px}
+
+/* season card */
+.season-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 22px;box-shadow:var(--shadow);position:relative}
+.season-card .head{text-align:center;margin-bottom:16px}
+.season-card .head .who{font-family:var(--hand);font-size:34px;line-height:1.1}
+.season-card .head small{color:var(--ink-soft);font-size:12px;letter-spacing:.14em}
+.mood-strip{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;margin:10px 0 16px}
+.mood-strip span{background:#fff8;border:1px solid var(--line);border-radius:10px;padding:6px 4px;font-size:12px;text-align:center;min-width:0;overflow:hidden}
+.mood-strip small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mood-strip em{display:block;font-style:normal;font-size:18px}
+.mood-strip small{display:block;font-size:11px;color:var(--ink-soft);margin-top:2px}
+.kv{display:grid;grid-template-columns:84px 1fr;gap:6px 10px;font-size:14.5px;margin:10px 0}
+.kv dt{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:.04em;white-space:nowrap}
+.kv dd{margin:0;white-space:pre-wrap;word-break:keep-all}
+.ba{display:flex;align-items:center;justify-content:center;gap:10px;margin:16px 0 6px;font-family:var(--hand);font-size:22px;line-height:1.25}
+.ba > div{flex:1;text-align:center;word-break:keep-all;min-width:0}
+.ba .arr{color:var(--accent);font-size:20px;flex:0 0 auto}
+.ba small{display:block;font-family:var(--serif);font-size:11px;color:var(--ink-soft);letter-spacing:.1em;text-align:center}
+.divider{border:none;border-top:1px dashed var(--line);margin:14px 0}
+.card-actions{display:flex;gap:8px;justify-content:center;margin:12px 0 26px;flex-wrap:wrap}
+
+/* envelope */
+.env-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh}
+.envelope{position:relative;width:300px;height:200px;cursor:pointer;perspective:800px}
+.envelope .back{position:absolute;inset:0;background:#e3d3b8;border-radius:8px;box-shadow:var(--shadow)}
+.envelope .paper{
+  position:absolute;left:16px;right:16px;top:20px;height:170px;background:var(--card);border:1px solid var(--line);border-radius:4px;
+  transition:transform .8s cubic-bezier(.2,.8,.2,1) .35s;display:flex;align-items:center;justify-content:center;flex-direction:column;
+  font-family:var(--hand);font-size:22px;color:var(--ink-soft)
+}
+.envelope .front{position:absolute;inset:0;top:50%;background:#d8c5a5;border-radius:0 0 8px 8px;clip-path:polygon(0 0,50% 45%,100% 0,100% 100%,0 100%)}
+.envelope .flap{
+  position:absolute;left:0;right:0;top:0;height:50%;background:#cdb894;transform-origin:top;transition:transform .7s ease;
+  clip-path:polygon(0 0,100% 0,50% 100%);z-index:3;border-radius:8px 8px 0 0
+}
+.envelope .seal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--hand);font-size:14px;z-index:4;box-shadow:0 3px 8px rgba(0,0,0,.2);transition:opacity .3s}
+.envelope.open .flap{transform:rotateX(180deg);z-index:0}
+.envelope.open .seal{opacity:0}
+.envelope.open .paper{transform:translateY(-150px)}
+.env-hint{margin-top:22px;color:var(--ink-soft);font-size:14px}
+.fade-in{animation:fade .6s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:99}
+.toast.show{opacity:1}
+.tip{background:#fff6;border-left:3px solid var(--accent);padding:10px 12px;font-size:13.5px;color:var(--ink-soft);border-radius:0 8px 8px 0;margin:10px 0}
+.count{font-size:12px;color:var(--ink-soft);text-align:right}
+.album-grid{display:flex;flex-direction:column;gap:22px}
+.link-inputs input{font-family:var(--serif);font-size:13px;margin-bottom:8px}
+@media (max-width:380px){h1{font-size:26px}.letter{padding:26px 18px 22px}.stamp{width:74px;height:74px;font-size:11px;right:14px;top:14px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   설정: 여기만 고치면 됩니다.
+   ========================================================= */
+const TEAM = {
+  season: "2026 멘토링 시즌",
+  members: [
+    { id: "bora",    name: "진보라", role: "멘토", color: "#c9a27e" },
+    { id: "yujeong", name: "이유정", role: "멘티", color: "#a3b899" },
+    { id: "hyean",   name: "이혜안", role: "멘티", color: "#d9a5a0" },
+    { id: "eunjin",  name: "허은진", role: "멘티", color: "#9fb4c7" },
+  ],
+  // 시간순. short는 카드의 작은 칸에 쓰는 줄임 이름
+  projects: [
+    { name: "월간 우리 팀 로그",            short: "팀 로그",     leader: "hyean" },
+    { name: "주식 추천/추세 매매 대시보드",  short: "주식 대시보드", leader: "eunjin" },
+    { name: "회의록으로 만드는 할 일 대시보드", short: "회의록 할 일", leader: "bora" },
+    { name: "우리의 한 시즌 (멘토링 회고)",  short: "한 시즌",     leader: "yujeong" },
+  ],
+};
+
+const MOODS = [
+  { k: "calm",  e: "😌", t: "편안" },
+  { k: "flow",  e: "🔥", t: "몰입" },
+  { k: "hard",  e: "😵", t: "버거움" },
+  { k: "learn", e: "💡", t: "배움" },
+  { k: "proud", e: "🎉", t: "뿌듯" },
+];
+
+const FOUR_LS = [
+  { k: "liked",  label: "Liked",      ko: "좋았던 것",   q: "이 시즌에서 계속 떠올리게 되는 좋았던 순간은?",
+    opts: ["수다 타임", "리더를 돌아가며 맡은 것", "함께 코딩하며 막힌 걸 뚫은 순간", "실패도 편하게 말할 수 있던 분위기", "서로의 방식이 달라 배운 점", "매주 얼굴 보는 것 자체"] },
+  { k: "learned", label: "Learned",   ko: "배운 것",     q: "시즌 전의 나는 몰랐던 것 중 지금 알게 된 것은?",
+    opts: ["AI 도구를 팀 프로세스에 녹이는 법", "리더로서 결정을 내리는 감각", "모르는 걸 먼저 묻는 용기", "완벽보다 완성이 먼저라는 것", "설명하면서 내가 더 배운다는 것", "협업의 속도를 맞추는 법"] },
+  { k: "lacked", label: "Lacked",     ko: "아쉬웠던 것", q: "조금 더 있었으면 좋았을 것은?",
+    opts: ["절대적인 시간", "더 깊은 코드 리뷰", "꾸준한 회고 습관", "결과물을 밖에 보여줄 기회", "각자 역할의 명확함", "쉬어가는 여유"] },
+  { k: "longed", label: "Longed for", ko: "바라는 것",   q: "이 팀과 앞으로 바라는 것은?",
+    opts: ["다음 시즌에도 이어지기", "사이드 프로젝트 함께하기", "가끔 만나 밥 먹고 수다", "서로의 성장을 계속 지켜보기", "각자 자리에서 이 경험을 퍼뜨리기", "1년 뒤 다시 회고하기"] },
+];
+
+const TITLES = [
+  { k: "lighthouse", e: "🗼", t: "등대",   d: "길을 잃을 때 방향을 보여준" },
+  { k: "spark",      e: "🔥", t: "불씨",   d: "멈춘 팀을 다시 움직이게 한" },
+  { k: "glue",       e: "🫶", t: "접착제", d: "분위기를 붙여준" },
+  { k: "lens",       e: "🔍", t: "돋보기", d: "놓친 디테일을 짚어준" },
+  { k: "compass",    e: "🧭", t: "나침반", d: "좋은 질문으로 길을 찾아준" },
+  { k: "cushion",    e: "☁️", t: "쿠션",   d: "지쳤을 때 기대게 해준" },
+  { k: "translator", e: "📖", t: "번역기", d: "복잡한 걸 정리해서 알려준" },
+  { k: "alarm",      e: "⏰", t: "알람",   d: "일정과 리듬을 챙겨준" },
+  { k: "window",     e: "🪟", t: "창문",   d: "새로운 시각을 열어준" },
+  { k: "mirror",     e: "🪞", t: "거울",   d: "내가 모르던 나를 보여준" },
+];
+
+/* =========================================================
+   상태
+   ========================================================= */
+const KEY = "wits-season-v1";
+const defaultState = () => ({
+  me: null,
+  moods: {},               // projIdx -> mood key
+  bestProject: null, bestWhy: "",
+  fourLs: {},              // k -> { pick: [], text: "" }
+  ai: { trust: 50, fear: 50, before: "", after: "" },
+  leader: { keep: "", try: "" },
+  thanks: {},              // memberId -> { titles: [], scene: "", note: "" }
+});
+let state = load();
+function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)); return s ? Object.assign(defaultState(), s) : defaultState(); }catch(e){ return defaultState(); } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+const member = id => TEAM.members.find(m => m.id === id);
+const others = () => TEAM.members.filter(m => m.id !== state.me);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const today = () => { const d = new Date(); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`; };
+function toast(msg){ const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove("show"), 1800); }
+
+/* =========================================================
+   라우팅
+   ========================================================= */
+const STEPS = ["intro","who","timeline","fourls","ai","leader","thanks","result"];
+function route(){
+  const h = location.hash.replace(/^#\/?/, "") || "intro";
+  const [path, qs] = h.split("?");
+  const params = new URLSearchParams(qs || "");
+  const [name, arg] = path.split("/");
+  return { name, arg, params };
+}
+function go(path){ location.hash = "#/" + path; }
+window.addEventListener("hashchange", render);
+window.addEventListener("DOMContentLoaded", render);
+
+function progress(name){
+  const idx = STEPS.indexOf(name);
+  if (idx < 1 || name === "result") return "";
+  return `<div class="progress">${STEPS.slice(1,-1).map((s,i)=>`<i class="${i < idx ? "on":""}"></i>`).join("")}</div>`;
+}
+
+function render(){
+  const r = route();
+  const app = document.getElementById("app");
+  const views = { intro, who, timeline, fourls, ai, leader, thanks, result, letter, album };
+  const view = views[r.name] || intro;
+  if (["timeline","fourls","ai","leader","thanks","result"].includes(r.name) && !state.me) { go("who"); return; }
+  app.innerHTML = `<div class="fade-in">${progress(r.name)}${view(r)}</div>`;
+  window.scrollTo(0,0);
+  if (typeof view.after === "function") view.after(r);
+}
+
+/* =========================================================
+   화면들
+   ========================================================= */
+function intro(){
+  return `
+    <div style="padding-top:12vh;text-align:center">
+      <div class="eyebrow">${esc(TEAM.season)}</div>
+      <h1>우리의 한 시즌</h1>
+      <p class="muted" style="margin:14px 0 30px">${TEAM.members.map(m=>m.name).join(" · ")}<br>
+      네 사람이 함께 코딩하고, 리더를 돌아가며 맡고, 수다도 떨었던 시간.<br>
+      질문을 따라 천천히 돌아보면 끝에서 서로에게 보낼 편지가 만들어져요.</p>
+      <p class="muted" style="font-size:13px">10분쯤 걸려요 · 저장은 이 브라우저에만 남아요</p>
+      <div style="margin-top:28px"><button class="btn" onclick="go('who')">시작하기</button></div>
+      ${state.me ? `<div style="margin-top:14px"><button class="btn ghost small" onclick="go('result')">이어서 결과 보기</button>
+        <button class="btn ghost small" onclick="resetAll()">처음부터 다시</button></div>` : ""}
+      <div style="margin-top:40px"><button class="btn ghost small" onclick="go('album')">받은 편지 모으기 →</button></div>
+    </div>`;
+}
+function resetAll(){ if (confirm("저장된 답변을 모두 지우고 처음부터 시작할까요?")) { state = defaultState(); save(); go("intro"); } }
+
+function who(){
+  return `
+    <div class="eyebrow">시작</div>
+    <h2>당신은 누구인가요?</h2>
+    <p class="muted">회고는 내 시선에서, 편지는 나머지 세 사람에게 씁니다.</p>
+    <div class="people" style="margin-top:20px">
+      ${TEAM.members.map(m=>`
+        <button class="person ${state.me===m.id?"on":""}" onclick="pick('me','${m.id}')">
+          <div class="dot" style="background:${m.color}">${esc(m.name[0])}</div>
+          <b>${esc(m.name)}</b><small>${esc(m.role)}</small>
+        </button>`).join("")}
+    </div>
+    ${nav("intro","timeline", !!state.me)}`;
+}
+
+function timeline(){
+  const s = state;
+  return `
+    <div class="eyebrow">1 · 타임라인 회고</div>
+    <h2>우리가 지나온 길</h2>
+    <p class="muted">프로젝트마다 그때의 기분을 스티커 하나로 붙여주세요. 오래 고민하지 말고 첫 느낌으로.</p>
+    <div class="tl" style="margin-top:22px">
+      ${TEAM.projects.map((p,i)=>`
+        <div class="tl-item">
+          <span class="name">${esc(p.name)}</span><span class="lead">리더 ${esc(member(p.leader)?.name || "")}${p.leader===s.me?" (나)":""}</span>
+          <div class="moods">${MOODS.map(m=>`<button class="mood ${s.moods[i]===m.k?"on":""}" onclick="setMood(${i},'${m.k}')">${m.e} ${m.t}</button>`).join("")}</div>
+        </div>`).join("")}
+    </div>
+    <div class="section">
+      <label class="q">가장 기억에 남는 프로젝트 하나를 고르면?</label>
+      <div class="chips">${TEAM.projects.map((p,i)=>`<button class="chip ${s.bestProject===i?"on":""}" onclick="pick('bestProject',${i})">${esc(p.name)}</button>`).join("")}</div>
+      <label class="q">왜 그 프로젝트가 남았나요? <span class="optional">한 줄</span></label>
+      <input type="text" placeholder="예) 처음으로 내가 방향을 정해봤던 프로젝트라서" value="${esc(s.bestWhy)}" oninput="setText('bestWhy',this.value)" />
+    </div>
+    ${nav("who","fourls", Object.keys(s.moods).length===TEAM.projects.length && s.bestProject!==null)}`;
+}
+function setMood(i,k){ state.moods[i]=k; save(); render(); }
+
+function fourls(){
+  return `
+    <div class="eyebrow">2 · 4Ls 회고</div>
+    <h2>좋았고, 배웠고, 아쉬웠고, 바라는 것</h2>
+    <p class="muted">각 항목에서 마음에 닿는 걸 고르고(여러 개 가능), 원하면 한 줄 덧붙여요.</p>
+    ${FOUR_LS.map(L=>{
+      const v = state.fourLs[L.k] || { pick: [], text: "" };
+      return `
+      <div class="section card">
+        <div class="sec-title"><b>${L.label}</b><span>${L.ko}</span></div>
+        <p class="muted" style="font-size:14px">${L.q}</p>
+        <div class="chips">${L.opts.map(o=>`<button class="chip ${v.pick.includes(o)?"on":""}" onclick="toggleL('${L.k}',${JSON.stringify(o).replace(/"/g,"&quot;")})">${esc(o)}</button>`).join("")}</div>
+        <input type="text" placeholder="직접 쓰기 (선택)" value="${esc(v.text)}" oninput="setL('${L.k}',this.value)" style="margin-top:10px" />
+      </div>`;}).join("")}
+    ${nav("timeline","ai", FOUR_LS.every(L=>{const v=state.fourLs[L.k]; return v && (v.pick.length||v.text.trim());}))}`;
+}
+function toggleL(k,o){ const v = state.fourLs[k] || (state.fourLs[k]={pick:[],text:""}); const i=v.pick.indexOf(o); i>=0?v.pick.splice(i,1):v.pick.push(o); save(); render(); }
+function setL(k,t){ const v = state.fourLs[k] || (state.fourLs[k]={pick:[],text:""}); v.text=t; save(); updateNav(); }
+
+function ai(){
+  const a = state.ai;
+  return `
+    <div class="eyebrow">3 · AI 시대의 나</div>
+    <h2>시즌 전과 후, 개발자로서의 나</h2>
+    <p class="muted">우리는 "AI 시대에 개발자로 살아남기"를 붙잡고 여러 방식으로 코딩해봤어요. 그 전과 후를 비교해볼게요.</p>
+    <div class="section card">
+      <label class="q">AI와 함께 코딩하는 나를 얼마나 신뢰하나요?</label>
+      <div class="slider"><input type="range" min="0" max="100" value="${a.trust}" oninput="setAI('trust',this.value)" />
+      <div class="ends"><span>아직 내가 다 확인해야 마음이 놓임</span><span>역할을 나눌 줄 알게 됨</span></div></div>
+      <label class="q">리더 역할에 대한 마음은?</label>
+      <div class="slider"><input type="range" min="0" max="100" value="${a.fear}" oninput="setAI('fear',this.value)" />
+      <div class="ends"><span>여전히 부담스러움</span><span>해볼 만하다고 느낌</span></div></div>
+    </div>
+    <div class="section card">
+      <label class="q">시즌 <b>전</b>의 나를 한 단어로</label>
+      <input type="text" placeholder="예) 불안한 코더" value="${esc(a.before)}" oninput="setAI('before',this.value)" />
+      <label class="q">시즌 <b>후</b>의 나를 한 단어로</label>
+      <input type="text" placeholder="예) 질문하는 개발자" value="${esc(a.after)}" oninput="setAI('after',this.value)" />
+    </div>
+    ${nav("fourls","leader", a.before.trim() && a.after.trim())}`;
+}
+function setAI(k,v){ state.ai[k]=v; save(); updateNav(); }
+
+function leader(){
+  const mine = TEAM.projects.filter(p=>p.leader===state.me);
+  const l = state.leader;
+  const intro = mine.length
+    ? `<p class="muted">당신이 리더였던 <b>${mine.map(p=>esc(p.name)).join(", ")}</b>를 떠올리며, Keep과 Try를 한 줄씩.</p>`
+    : `<p class="muted">리더는 아니었지만 함께 만든 사람으로서, 팀에서 Keep과 Try를 한 줄씩.</p>`;
+  return `
+    <div class="eyebrow">4 · 리더 회고 (KPT)</div>
+    <h2>${mine.length ? "내가 이끌었던 시간" : "함께 만들었던 시간"}</h2>
+    ${intro}
+    <div class="section card">
+      <label class="q"><b style="color:var(--accent)">Keep</b> · 다음에도 꼭 계속하고 싶은 것</label>
+      <textarea rows="2" placeholder="예) 시작 전에 각자 기대를 먼저 말하는 시간" oninput="setLeader('keep',this.value)">${esc(l.keep)}</textarea>
+      <label class="q"><b style="color:var(--accent)">Try</b> · 다음엔 이렇게 해보고 싶은 것</label>
+      <textarea rows="2" placeholder="예) 중간에 한 번은 멈춰서 방향을 다시 묻기" oninput="setLeader('try',this.value)">${esc(l.try)}</textarea>
+    </div>
+    <div class="tip">Problem은 굳이 적지 않아도 돼요. 4Ls에서 이미 아쉬움을 꺼냈으니, 여기서는 앞을 보는 두 줄만.</div>
+    ${nav("ai","thanks/0", l.keep.trim() && l.try.trim())}`;
+}
+function setLeader(k,v){ state.leader[k]=v; save(); updateNav(); }
+
+function thanks(r){
+  const idx = Number(r.arg||0);
+  const list = others();
+  const to = list[idx];
+  if (!to) { go("result"); return ""; }
+  const t = state.thanks[to.id] || (state.thanks[to.id] = { titles: [], scene: "", note: "" });
+  const prev = idx===0 ? "leader" : `thanks/${idx-1}`;
+  const next = idx===list.length-1 ? "result" : `thanks/${idx+1}`;
+  return `
+    <div class="eyebrow">5 · 감사 라운드 ${idx+1}/${list.length}</div>
+    <h2><span style="color:${to.color};font-family:var(--hand);font-size:30px">${esc(to.name)}</span> 에게</h2>
+    <p class="muted">${esc(to.role)} ${esc(to.name)}은(는) 이 시즌에 우리 팀의 무엇이었을까요?</p>
+    <div class="section">
+      <label class="q">우리 팀의 ___ <span class="optional">최대 2개</span></label>
+      <div class="chips">${TITLES.map(x=>`<button class="chip big ${t.titles.includes(x.k)?"on":""}" onclick="toggleTitle('${to.id}','${x.k}')">${x.e} ${x.t}<br><span style="font-size:12px;opacity:.75">${x.d}</span></button>`).join("")}</div>
+    </div>
+    <div class="section card">
+      <label class="q">이 순간이 고마웠어요 <span class="optional">구체적인 장면 하나</span></label>
+      <textarea rows="3" placeholder="예) 내가 리더였던 주에 말없이 PR 리뷰를 먼저 달아줬던 날" oninput="setThanks('${to.id}','scene',this.value)">${esc(t.scene)}</textarea>
+      <label class="q">한마디 <span class="optional">선택</span></label>
+      <textarea rows="2" placeholder="예) 다음 시즌에도 같은 팀이면 좋겠어요" oninput="setThanks('${to.id}','note',this.value)">${esc(t.note)}</textarea>
+    </div>
+    ${nav(prev, next, t.titles.length>0 && t.scene.trim())}`;
+}
+function toggleTitle(id,k){ const t=state.thanks[id]; const i=t.titles.indexOf(k); if(i>=0) t.titles.splice(i,1); else { if(t.titles.length>=2) { toast("칭호는 2개까지만"); return; } t.titles.push(k); } save(); render(); }
+function setThanks(id,k,v){ state.thanks[id][k]=v; save(); updateNav(); }
+
+/* ---------- 결과 ---------- */
+function letterData(toId){
+  const t = state.thanks[toId]; if (!t) return null;
+  return { v:1, from: state.me, to: toId, titles: t.titles, scene: t.scene, note: t.note, date: today(), season: TEAM.season };
+}
+function encode(obj){ return LZString.compressToEncodedURIComponent(JSON.stringify(obj)); }
+function decode(s){ try{ return JSON.parse(LZString.decompressFromEncodedURIComponent(s)); }catch(e){ return null; } }
+function letterURL(d){ return location.origin + location.pathname + "#/letter?d=" + encode(d); }
+
+function renderLetter(d, id){
+  const from = member(d.from), to = member(d.to);
+  const titles = (d.titles||[]).map(k=>TITLES.find(t=>t.k===k)).filter(Boolean);
+  const main = titles[0];
+  return `
+    <div class="letter" id="${id||""}">
+      ${main ? `<div class="stamp"><span class="ico">${main.e}</span>우리 팀의<b>${esc(main.t)}</b></div>` : ""}
+      <div class="to">TO.<b>${esc(to?.name||"")}</b><div class="season">${esc(d.season||"")}</div></div>
+      <div class="titles-line">${titles.map(t=>`<span class="title-tag">${t.e} ${esc(t.d)} ${esc(t.t)}</span>`).join("")}</div>
+      <div class="body">
+        <div class="scene">${esc(d.scene)}</div>
+        ${d.note ? `<span class="hand" style="margin-top:14px">${esc(d.note)}</span>` : ""}
+      </div>
+      <div class="from"><span class="sig" style="color:${from?.color||"var(--ink)"}">${esc(from?.name||"")}</span><small>${esc(d.date||"")}</small></div>
+    </div>`;
+}
+
+function renderSeasonCard(){
+  const me = member(state.me);
+  const best = TEAM.projects[state.bestProject];
+  return `
+    <div class="season-card" id="season-card">
+      <div class="head"><small>${esc(TEAM.season)}</small><div class="who" style="color:${me.color}">${esc(me.name)}의 한 시즌</div></div>
+      <div class="mood-strip">${TEAM.projects.map((p,i)=>{const m=MOODS.find(x=>x.k===state.moods[i]); return `<span><em>${m?m.e:"·"}</em><small>${esc(p.short||p.name)}</small></span>`;}).join("")}</div>
+      ${best ? `<p style="text-align:center;font-size:14.5px;margin:0 0 6px">가장 남은 프로젝트는 <b>${esc(best.name)}</b>${state.bestWhy?`<br><span class="hand" style="font-size:18px;color:var(--ink-soft)">"${esc(state.bestWhy)}"</span>`:""}</p>` : ""}
+      <hr class="divider" />
+      <dl class="kv">${FOUR_LS.map(L=>{const v=state.fourLs[L.k]||{pick:[],text:""}; const items=[...v.pick, v.text.trim()].filter(Boolean); return `<dt>${L.label}</dt><dd>${esc(items.join(" · "))}</dd>`;}).join("")}</dl>
+      <hr class="divider" />
+      <div class="ba"><div>${esc(state.ai.before)}<small>BEFORE</small></div><span class="arr">→</span><div>${esc(state.ai.after)}<small>AFTER</small></div></div>
+      <hr class="divider" />
+      <dl class="kv"><dt>Keep</dt><dd>${esc(state.leader.keep)}</dd><dt>Try</dt><dd>${esc(state.leader.try)}</dd></dl>
+      <div style="text-align:right;margin-top:10px"><small class="muted" style="font-size:11px">${today()}</small></div>
+    </div>`;
+}
+
+function result(){
+  const list = others();
+  return `
+    <div class="eyebrow">마무리</div>
+    <h2>카드가 완성됐어요</h2>
+    <p class="muted">내 시즌 카드 한 장과, 세 사람에게 보낼 편지 세 장. 이미지로 저장하거나 링크로 보내세요. 링크 안에 편지 내용이 그대로 담겨 있어서 서버 없이도 열려요.</p>
+    <div class="section">
+      ${renderSeasonCard()}
+      <div class="card-actions"><button class="btn small" onclick="savePng('season-card','${esc(member(state.me).name)}-season')">이미지 저장</button></div>
+    </div>
+    ${list.map((m,i)=>{ const d=letterData(m.id); return `
+      <div class="section">
+        ${renderLetter(d,"letter-"+i)}
+        <div class="card-actions">
+          <button class="btn small accent" onclick="copyLink('${m.id}')">링크 복사</button>
+          <button class="btn small" onclick="savePng('letter-${i}','to-${esc(m.name)}-from-${esc(member(state.me).name)}')">이미지 저장</button>
+          <button class="btn small ghost" onclick="go('thanks/${i}')">수정</button>
+        </div>
+      </div>`;}).join("")}
+    <div class="tip">받은 사람은 링크를 열면 봉투가 나오고, 탭하면 편지가 펼쳐져요. 세 사람에게서 받은 링크를 모으면 <b>받은 편지 앨범</b>도 만들 수 있어요.</div>
+    <div class="nav">
+      <button class="btn ghost" onclick="go('thanks/${list.length-1}')">← 이전</button>
+      <div class="row">
+        <button class="btn ghost small" onclick="exportJSON()">회고 내보내기</button>
+        <button class="btn ghost small" onclick="go('album')">받은 편지 모으기</button>
+      </div>
+    </div>`;
+}
+async function copyLink(toId){
+  const url = letterURL(letterData(toId));
+  try{ await navigator.clipboard.writeText(url); toast(`${member(toId).name}에게 보낼 링크를 복사했어요`); }
+  catch(e){ prompt("링크를 복사하세요", url); }
+}
+async function savePng(id, name){
+  const node = document.getElementById(id); if(!node) return;
+  toast("이미지를 만들고 있어요…");
+  try{
+    const url = await htmlToImage.toPng(node, { pixelRatio: 2, backgroundColor: "#f6efe2", style: { margin: "0" } });
+    const a = document.createElement("a"); a.href = url; a.download = name + ".png"; a.click();
+  }catch(e){ console.error(e); toast("저장에 실패했어요. http로 서빙 중인지 확인해 주세요"); }
+}
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`${member(state.me).name}-retro.json`; a.click();
+}
+
+/* ---------- 편지 받기 ---------- */
+function letter(r){
+  const d = decode(r.params.get("d")||"");
+  if (!d || !d.to) return `<div class="env-wrap"><h2>편지를 열 수 없어요</h2><p class="muted">링크가 잘렸거나 잘못된 것 같아요.</p><button class="btn ghost" onclick="go('intro')">처음으로</button></div>`;
+  const to = member(d.to), from = member(d.from);
+  return `
+    <div class="env-wrap" id="env-view">
+      <div class="eyebrow">${esc(from?.name||"")} → ${esc(to?.name||"")}</div>
+      <div class="envelope" id="envelope" onclick="openEnvelope()">
+        <div class="back"></div>
+        <div class="paper"><span>${esc(to?.name||"")} 에게</span></div>
+        <div class="front"></div>
+        <div class="flap"></div>
+        <div class="seal">${esc(TEAM.season.slice(0,4))}</div>
+      </div>
+      <div class="env-hint">봉투를 탭해서 열어보세요</div>
+    </div>
+    <div id="letter-view" style="display:none">
+      <div class="section">${renderLetter(d,"letter-recv")}</div>
+      <div class="card-actions">
+        <button class="btn small" onclick="savePng('letter-recv','to-${esc(to?.name)}-from-${esc(from?.name)}')">이미지 저장</button>
+        <button class="btn small ghost" onclick="addToAlbum()">앨범에 담기</button>
+      </div>
+      <div style="text-align:center"><button class="btn ghost small" onclick="go('intro')">나도 회고하고 편지 쓰기 →</button></div>
+    </div>`;
+}
+function openEnvelope(){
+  const env = document.getElementById("envelope"); if(env.classList.contains("open")) return;
+  env.classList.add("open");
+  setTimeout(()=>{ document.getElementById("env-view").style.display="none"; const v=document.getElementById("letter-view"); v.style.display="block"; v.classList.add("fade-in"); window.scrollTo(0,0); }, 1400);
+}
+const ALBUM_KEY = "wits-album-v1";
+function albumLoad(){ try{ return JSON.parse(localStorage.getItem(ALBUM_KEY))||[]; }catch(e){ return []; } }
+function albumSave(a){ try{ localStorage.setItem(ALBUM_KEY, JSON.stringify(a)); }catch(e){} }
+function addToAlbum(){
+  const d = decode(route().params.get("d")||""); if(!d) return;
+  const a = albumLoad();
+  if (a.some(x=>x.from===d.from && x.to===d.to && x.scene===d.scene)) { toast("이미 앨범에 있어요"); go("album"); return; }
+  a.push(d); albumSave(a); toast("앨범에 담았어요"); go("album");
+}
+
+/* ---------- 앨범 ---------- */
+function album(r){
+  let list = albumLoad();
+  const shared = r.params.get("d");
+  if (shared) { const arr = decode(shared); if (Array.isArray(arr)) list = arr; }
+  const grouped = list.length ? list : [];
+  const toName = grouped[0] ? member(grouped[0].to)?.name : "";
+  return `
+    <div class="eyebrow">받은 편지</div>
+    <h2>${toName ? `${esc(toName)}에게 온 편지` : "받은 편지 모으기"}</h2>
+    <p class="muted">받은 링크를 아래에 붙여넣으면 한 화면에 모여요. 이 브라우저에 저장되고, 모은 앨범도 링크 하나로 다시 공유할 수 있어요.</p>
+    ${grouped.length ? `<div class="album-grid section" id="album-grid">${grouped.map((d,i)=>renderLetter(d,"album-"+i)).join("")}</div>
+      <div class="card-actions">
+        <button class="btn small accent" onclick="copyAlbumLink()">앨범 링크 복사</button>
+        <button class="btn small" onclick="savePng('album-grid','${esc(toName)}-letters')">한 장으로 저장</button>
+        ${shared ? "" : `<button class="btn small ghost" onclick="clearAlbum()">비우기</button>`}
+      </div>` : `<div class="card" style="text-align:center;color:var(--ink-soft)">아직 담긴 편지가 없어요</div>`}
+    ${shared ? "" : `<div class="section card link-inputs">
+      <label class="q" style="margin-top:0">받은 편지 링크 붙여넣기</label>
+      <input type="text" id="paste-link" placeholder="https://…#/letter?d=…" />
+      <div style="text-align:right"><button class="btn small" onclick="pasteLink()">담기</button></div>
+    </div>`}
+    <div class="nav"><button class="btn ghost" onclick="go('intro')">← 처음으로</button>${state.me?`<button class="btn ghost" onclick="go('result')">내 카드 보기</button>`:""}</div>`;
+}
+function pasteLink(){
+  const v = document.getElementById("paste-link").value.trim();
+  const m = v.match(/[?&]d=([^&#\s]+)/); const raw = m ? m[1] : v;
+  const d = decode(raw);
+  if (!d || !d.to) { toast("편지 링크를 읽을 수 없어요"); return; }
+  const a = albumLoad();
+  if (a.some(x=>x.from===d.from && x.to===d.to && x.scene===d.scene)) { toast("이미 앨범에 있어요"); return; }
+  a.push(d); albumSave(a); toast("담았어요"); render();
+}
+function clearAlbum(){ if(confirm("앨범을 비울까요?")){ albumSave([]); render(); } }
+async function copyAlbumLink(){
+  const list = route().params.get("d") ? decode(route().params.get("d")) : albumLoad();
+  const url = location.origin + location.pathname + "#/album?d=" + encode(list);
+  try{ await navigator.clipboard.writeText(url); toast("앨범 링크를 복사했어요"); }catch(e){ prompt("링크를 복사하세요", url); }
+}
+
+/* =========================================================
+   공용
+   ========================================================= */
+let navState = { prev:null, next:null, ok:false };
+function nav(prev, next, ok){
+  navState = { prev, next, ok: !!ok };
+  return `<div class="nav">
+    <button class="btn ghost" onclick="go('${prev}')">← 이전</button>
+    <button class="btn" id="next-btn" ${ok?"":"disabled"} onclick="go('${next}')">${next==="result"?"카드 만들기":"다음 →"}</button>
+  </div>`;
+}
+function updateNav(){
+  // 텍스트 입력 중에는 전체 리렌더 대신 다음 버튼 상태만 갱신
+  const r = route(); const btn = document.getElementById("next-btn"); if(!btn) return;
+  let ok = false;
+  if (r.name==="timeline") ok = Object.keys(state.moods).length===TEAM.projects.length && state.bestProject!==null;
+  else if (r.name==="fourls") ok = FOUR_LS.every(L=>{const v=state.fourLs[L.k]; return v && (v.pick.length||v.text.trim());});
+  else if (r.name==="ai") ok = state.ai.before.trim() && state.ai.after.trim();
+  else if (r.name==="leader") ok = state.leader.keep.trim() && state.leader.try.trim();
+  else if (r.name==="thanks") { const t = state.thanks[others()[Number(r.arg||0)]?.id]; ok = t && t.titles.length>0 && t.scene.trim(); }
+  btn.disabled = !ok;
+}
+function pick(k,v){ state[k]=v; save(); render(); }
+function setText(k,v){ state[k]=v; save(); updateNav(); }
+</script>
+</body>
+</html>
